@@ -13,21 +13,13 @@ export class JSLinqArrayGrouped<T, U>{
 }
 
 export class JSLinqArray<T> extends Array<T> {
+
   constructor(arr?: Array<T>) {
     super(...arr);
-
-     this.toArray = (): T[] => {
-      const temp: T[] = [];
-      for (let i = 0; i < this.length; i++) {
-        temp.push(this[i]);
-      }
-      return temp;
-    }
     console.log(this);
   }
 
   static _classTypes: 'string' | 'number' | 'undefined' | 'boolean' | 'bigint' | 'symbol' | 'object' | 'function';
-
   where = (predicate: (o: T) => boolean): JSLinqArray<T> => {
     const tempArr = new JSLinqArray<T>();
     for (let i = 0; i < this.length; i++) {
@@ -264,22 +256,6 @@ export class JSLinqArray<T> extends Array<T> {
     return max;
   }
 
-  // toArray = function (): T[] {
-  //   const temp: T[] = [];
-  //   for (let i = 0; i < this.length; i++) {
-  //     temp.push(this[i]);
-  //   }
-  //   return temp;
-  // }
-
-  public toArray(): T[] {
-    const temp: T[] = [];
-    for (let i = 0; i < this.length; i++) {
-      temp.push(this[i]);
-    }
-    return temp;
-  }
-
   /**
    * Select a list of columns, this method will flatten any class methods;
    */
@@ -306,6 +282,14 @@ export class JSLinqArray<T> extends Array<T> {
     return output;
   }
 
+  toArray = (): T[] => {
+    const output: T[] = new Array<T>();
+    for(let i = 0; i < this.length; i++){
+      output.push(this[i]);
+    }
+    return output;
+  }
+
   private _findIndex = <U>(arr: T[], obj: T, key: (o: T) => U): number => {
     let index = -1;
     for (let i = 0; i < arr.length; i++) {
@@ -317,6 +301,7 @@ export class JSLinqArray<T> extends Array<T> {
     return index;
   }
 }
+
 export class TestClass {
   constructor(key: number = null, value: string = null) {
     this.key = key;
@@ -421,11 +406,13 @@ const complexObjArray = new JSLinqArray([
   ]))
 ]);
 
-const test2 = complexObjArray.select<{ name: string, classes: typeof Student.prototype.classes }>('name', 'classes').where(s => s.classes.sum(c => c.credits) <= 6);
+const test2 = complexObjArray.select<{ name: string, classes: typeof Student.prototype.classes }>('name', 'classes');
 console.log(complexObjArray);
 
 console.log('-------------------');
 for (const student of test2) {
+  student.classes.pushUnique(new StudentClass('Intro to Economics', 'ECON 101', 3), c => c.id);
+  student.classes.spliceIfExists({name: 'test', id: 'MATH 165', credits: 3}, c => c.id); // Not working properly. Removing too many results
   console.log(student.name);
   console.log(student.classes.toArray());
 }

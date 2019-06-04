@@ -296,6 +296,13 @@ var JSLinqArray = /** @class */ (function (_super) {
             }
             return output;
         };
+        _this.toArray = function () {
+            var output = new Array();
+            for (var i = 0; i < _this.length; i++) {
+                output.push(_this[i]);
+            }
+            return output;
+        };
         _this._findIndex = function (arr, obj, key) {
             var index = -1;
             for (var i = 0; i < arr.length; i++) {
@@ -306,30 +313,9 @@ var JSLinqArray = /** @class */ (function (_super) {
             }
             return index;
         };
-        _this.toArray = function () {
-            var temp = [];
-            for (var i = 0; i < _this.length; i++) {
-                temp.push(_this[i]);
-            }
-            return temp;
-        };
         console.log(_this);
         return _this;
     }
-    // toArray = function (): T[] {
-    //   const temp: T[] = [];
-    //   for (let i = 0; i < this.length; i++) {
-    //     temp.push(this[i]);
-    //   }
-    //   return temp;
-    // }
-    JSLinqArray.prototype.toArray = function () {
-        var temp = [];
-        for (var i = 0; i < this.length; i++) {
-            temp.push(this[i]);
-        }
-        return temp;
-    };
     return JSLinqArray;
 }(Array));
 exports.JSLinqArray = JSLinqArray;
@@ -415,25 +401,28 @@ console.log('-------------------');
 //     console.log(sub.print());
 //   }
 // }
-// const complexObjArray = new JSLinqArray([
-//   new Student(1, 'Test1', 25, new JSLinqArray<StudentClass>([
-//     new StudentClass('Intro to Economics', 'ECON 101', 3),
-//     new StudentClass('Intro to Finance', 'FIN 101', 3)
-//   ])),
-//   new Student(2, 'Test2', 22, new JSLinqArray<StudentClass>([
-//     new StudentClass('Intro to Economics', 'ECON 101', 3),
-//     new StudentClass('Calculus II', 'MATH 165', 4)
-//   ])),
-//   new Student(3, 'Test3', 30, new JSLinqArray<StudentClass>([
-//     new StudentClass('Calculus II', 'MATH 165', 4),
-//     new StudentClass('Intro to Java', 'CSCI 121', 3)
-//   ]))
-// ]);
-// const test2 = complexObjArray.select<{ name: string, classes: typeof Student.prototype.classes }>('name', 'classes').where(s => s.classes.sum(c => c.credits) <= 6);
-// console.log(complexObjArray);
-// console.log('-------------------');
-// for (const student of test2) {
-//   console.log(student.name);
-//   console.log(student.classes.toArray());
-// }
+var complexObjArray = new JSLinqArray([
+    new Student(1, 'Test1', 25, new JSLinqArray([
+        new StudentClass('Intro to Economics', 'ECON 101', 3),
+        new StudentClass('Intro to Finance', 'FIN 101', 3)
+    ])),
+    new Student(2, 'Test2', 22, new JSLinqArray([
+        new StudentClass('Intro to Economics', 'ECON 101', 3),
+        new StudentClass('Calculus II', 'MATH 165', 4)
+    ])),
+    new Student(3, 'Test3', 30, new JSLinqArray([
+        new StudentClass('Calculus II', 'MATH 165', 4),
+        new StudentClass('Intro to Java', 'CSCI 121', 3)
+    ]))
+]);
+var test2 = complexObjArray.select('name', 'classes');
+console.log(complexObjArray);
+console.log('-------------------');
+for (var _i = 0, test2_1 = test2; _i < test2_1.length; _i++) {
+    var student = test2_1[_i];
+    student.classes.pushUnique(new StudentClass('Intro to Economics', 'ECON 101', 3), function (c) { return c.id; });
+    student.classes.spliceIfExists({ name: 'test', id: 'MATH 165', credits: 3 }, function (c) { return c.id; });
+    console.log(student.name);
+    console.log(student.classes.toArray());
+}
 // console.log(new Student(1, 'test', 25));
