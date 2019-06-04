@@ -1,0 +1,29 @@
+{
+  "name": "linq.js",
+  "version": "1.0.0",
+  "description": "Extension library giving fluid and dynamic array operations",
+  "main": "main.js",
+  "dependencies": {
+    "tslib": "^1.9.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "reset && tsc main.ts && node main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reed-lawrence/linq.js.git"
+  },
+  "keywords": [
+    "linq",
+    "javascript",
+    "arrays"
+  ],
+  "author": "Reed Lawrence",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/reed-lawrence/linq.js/issues"
+  },
+  "homepage": "https://github.com/reed-lawrence/linq.js#readme"
+}

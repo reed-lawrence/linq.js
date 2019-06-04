@@ -15,6 +15,15 @@ export class JSLinqArrayGrouped<T, U>{
 export class JSLinqArray<T> extends Array<T> {
   constructor(arr?: Array<T>) {
     super(...arr);
+
+     this.toArray = (): T[] => {
+      const temp: T[] = [];
+      for (let i = 0; i < this.length; i++) {
+        temp.push(this[i]);
+      }
+      return temp;
+    }
+    console.log(this);
   }
 
   static _classTypes: 'string' | 'number' | 'undefined' | 'boolean' | 'bigint' | 'symbol' | 'object' | 'function';
@@ -255,14 +264,46 @@ export class JSLinqArray<T> extends Array<T> {
     return max;
   }
 
+  // toArray = function (): T[] {
+  //   const temp: T[] = [];
+  //   for (let i = 0; i < this.length; i++) {
+  //     temp.push(this[i]);
+  //   }
+  //   return temp;
+  // }
 
-
-  toArray = function (): T[] {
+  public toArray(): T[] {
     const temp: T[] = [];
     for (let i = 0; i < this.length; i++) {
       temp.push(this[i]);
     }
     return temp;
+  }
+
+  /**
+   * Select a list of columns, this method will flatten any class methods;
+   */
+  select = <U>(...keys: (keyof T)[]): JSLinqArray<U> => {
+    let output = new JSLinqArray<U>();
+
+    for (let i = 0; i < this.length; i++) {
+      let temp: any = {};
+      for (let key of keys) {
+        const keyType = typeof this[i][<any>key]
+        if (keyType === 'function') {
+          console.warn('Function ${key} used as key, will flatten and may perform unexpectedly.');
+        } else if (keyType === 'object') {
+          // console.warn('Object ${key} used as key, will flatten and may perform unexpectedly.');
+          temp[key] = Object.create(this[i][<any>key]);
+        } else {
+          temp[key] = JSON.parse(JSON.stringify(this[i][<any>key]));
+        }
+
+      }
+      output.push(<any>temp);
+    }
+
+    return output;
   }
 
   private _findIndex = <U>(arr: T[], obj: T, key: (o: T) => U): number => {
@@ -282,7 +323,19 @@ export class TestClass {
     this.value = value;
   }
   key: number;
-  value: string
+  value: string;
+}
+
+export class StudentClass {
+  constructor(name?: string, id?: string, credits?: number) {
+    this.name = name;
+    this.id = id;
+    this.credits = credits;
+  }
+
+  name: string;
+  id: string;
+  credits: number;
 }
 
 export class Person {
@@ -300,11 +353,13 @@ export class Person {
 }
 
 export class Student extends Person {
-  constructor(id?: number, name?: string, age?: number) {
+  constructor(id?: number, name?: string, age?: number, classes?: StudentClass[]) {
     super(name, age);
     this.id = id;
+    this.classes = new JSLinqArray(classes);
   }
   id: number;
+  classes: JSLinqArray<StudentClass>;
 }
 
 const objArr = new JSLinqArray<{ name: string, age: number, id: number }>([{
@@ -337,19 +392,46 @@ const objArr = new JSLinqArray<{ name: string, age: number, id: number }>([{
   id: 7
 }]);
 
-console.log(objArr.toArray())
+// console.log(objArr.toArray())
 
-const test = objArr.mapToExplicit(Person).groupBy(p => p.age);
+// const test = objArr.mapToExplicit(Person).groupBy(p => p.age);
 
 console.log('-------------------');
-// console.log(test.toArray());
-// console.log('-------------------');
-for (const group of test) {
-  console.log(group.Key);
-  for(const sub of group.Collection){
-    console.log(sub.print());
-  }
+// // console.log(test.toArray());
+// // console.log('-------------------');
+// for (const group of test) {
+//   console.log(group.Key);
+//   for (const sub of group.Collection) {
+//     console.log(sub.print());
+//   }
+// }
+
+const complexObjArray = new JSLinqArray([
+  new Student(1, 'Test1', 25, new JSLinqArray<StudentClass>([
+    new StudentClass('Intro to Economics', 'ECON 101', 3),
+    new StudentClass('Intro to Finance', 'FIN 101', 3)
+  ])),
+  new Student(2, 'Test2', 22, new JSLinqArray<StudentClass>([
+    new StudentClass('Intro to Economics', 'ECON 101', 3),
+    new StudentClass('Calculus II', 'MATH 165', 4)
+  ])),
+  new Student(3, 'Test3', 30, new JSLinqArray<StudentClass>([
+    new StudentClass('Calculus II', 'MATH 165', 4),
+    new StudentClass('Intro to Java', 'CSCI 121', 3)
+  ]))
+]);
+
+const test2 = complexObjArray.select<{ name: string, classes: typeof Student.prototype.classes }>('name', 'classes').where(s => s.classes.sum(c => c.credits) <= 6);
+console.log(complexObjArray);
+
+console.log('-------------------');
+for (const student of test2) {
+  console.log(student.name);
+  console.log(student.classes.toArray());
 }
+
+
+
 
 // console.log(new Student(1, 'test', 25));
 

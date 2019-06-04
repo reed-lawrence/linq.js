@@ -267,12 +267,34 @@ var JSLinqArray = /** @class */ (function (_super) {
             }
             return max;
         };
-        _this.toArray = function () {
-            var temp = [];
-            for (var i = 0; i < this.length; i++) {
-                temp.push(this[i]);
+        /**
+         * Select a list of columns, this method will flatten any class methods;
+         */
+        _this.select = function () {
+            var keys = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                keys[_i] = arguments[_i];
             }
-            return temp;
+            var output = new JSLinqArray();
+            for (var i = 0; i < _this.length; i++) {
+                var temp = {};
+                for (var _a = 0, keys_1 = keys; _a < keys_1.length; _a++) {
+                    var key = keys_1[_a];
+                    var keyType = typeof _this[i][key];
+                    if (keyType === 'function') {
+                        console.warn('Function ${key} used as key, will flatten and may perform unexpectedly.');
+                    }
+                    else if (keyType === 'object') {
+                        // console.warn('Object ${key} used as key, will flatten and may perform unexpectedly.');
+                        temp[key] = Object.create(_this[i][key]);
+                    }
+                    else {
+                        temp[key] = JSON.parse(JSON.stringify(_this[i][key]));
+                    }
+                }
+                output.push(temp);
+            }
+            return output;
         };
         _this._findIndex = function (arr, obj, key) {
             var index = -1;
@@ -284,8 +306,30 @@ var JSLinqArray = /** @class */ (function (_super) {
             }
             return index;
         };
+        _this.toArray = function () {
+            var temp = [];
+            for (var i = 0; i < _this.length; i++) {
+                temp.push(_this[i]);
+            }
+            return temp;
+        };
+        console.log(_this);
         return _this;
     }
+    // toArray = function (): T[] {
+    //   const temp: T[] = [];
+    //   for (let i = 0; i < this.length; i++) {
+    //     temp.push(this[i]);
+    //   }
+    //   return temp;
+    // }
+    JSLinqArray.prototype.toArray = function () {
+        var temp = [];
+        for (var i = 0; i < this.length; i++) {
+            temp.push(this[i]);
+        }
+        return temp;
+    };
     return JSLinqArray;
 }(Array));
 exports.JSLinqArray = JSLinqArray;
@@ -299,6 +343,15 @@ var TestClass = /** @class */ (function () {
     return TestClass;
 }());
 exports.TestClass = TestClass;
+var StudentClass = /** @class */ (function () {
+    function StudentClass(name, id, credits) {
+        this.name = name;
+        this.id = id;
+        this.credits = credits;
+    }
+    return StudentClass;
+}());
+exports.StudentClass = StudentClass;
 var Person = /** @class */ (function () {
     function Person(name, age) {
         var _this = this;
@@ -313,9 +366,10 @@ var Person = /** @class */ (function () {
 exports.Person = Person;
 var Student = /** @class */ (function (_super) {
     __extends(Student, _super);
-    function Student(id, name, age) {
+    function Student(id, name, age, classes) {
         var _this = _super.call(this, name, age) || this;
         _this.id = id;
+        _this.classes = new JSLinqArray(classes);
         return _this;
     }
     return Student;
@@ -350,17 +404,36 @@ var objArr = new JSLinqArray([{
         age: 21,
         id: 7
     }]);
-console.log(objArr.toArray());
-var test = objArr.mapToExplicit(Person).groupBy(function (p) { return p.age; });
+// console.log(objArr.toArray())
+// const test = objArr.mapToExplicit(Person).groupBy(p => p.age);
 console.log('-------------------');
-// console.log(test.toArray());
+// // console.log(test.toArray());
+// // console.log('-------------------');
+// for (const group of test) {
+//   console.log(group.Key);
+//   for (const sub of group.Collection) {
+//     console.log(sub.print());
+//   }
+// }
+// const complexObjArray = new JSLinqArray([
+//   new Student(1, 'Test1', 25, new JSLinqArray<StudentClass>([
+//     new StudentClass('Intro to Economics', 'ECON 101', 3),
+//     new StudentClass('Intro to Finance', 'FIN 101', 3)
+//   ])),
+//   new Student(2, 'Test2', 22, new JSLinqArray<StudentClass>([
+//     new StudentClass('Intro to Economics', 'ECON 101', 3),
+//     new StudentClass('Calculus II', 'MATH 165', 4)
+//   ])),
+//   new Student(3, 'Test3', 30, new JSLinqArray<StudentClass>([
+//     new StudentClass('Calculus II', 'MATH 165', 4),
+//     new StudentClass('Intro to Java', 'CSCI 121', 3)
+//   ]))
+// ]);
+// const test2 = complexObjArray.select<{ name: string, classes: typeof Student.prototype.classes }>('name', 'classes').where(s => s.classes.sum(c => c.credits) <= 6);
+// console.log(complexObjArray);
 // console.log('-------------------');
-for (var _i = 0, test_1 = test; _i < test_1.length; _i++) {
-    var group = test_1[_i];
-    console.log(group.Key);
-    for (var _a = 0, _b = group.Collection; _a < _b.length; _a++) {
-        var sub = _b[_a];
-        console.log(sub.print());
-    }
-}
+// for (const student of test2) {
+//   console.log(student.name);
+//   console.log(student.classes.toArray());
+// }
 // console.log(new Student(1, 'test', 25));
