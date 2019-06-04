@@ -760,6 +760,9 @@ export class List<T> {
     return new List(_.cloneDeep(_.tail(this._values)));
   }
 
+
+  /// NATIVE REPRO
+
   /**
    * Performs the specified action for each element in an array.
    * @param callbackfn A function that accepts up to three arguments. forEach calls the callbackfn function one time for each element in the array.
@@ -768,6 +771,29 @@ export class List<T> {
   forEach(callbackfn: (value: T, index: number, array: T[]) => void, thisArg?: any): void {
     this._values.forEach(callbackfn);
   }
+
+  /**
+   * Removes the last element from an array and returns it.
+   */
+  pop(): T {
+    return this._values.pop();
+  }
+
+  /**
+   * Calls the specified callback function for all the elements in an array. The return value of the callback function is the accumulated result, and is provided as an argument in the next call to the callback function. Calls the specified callback function for all the elements in an array. The return value of the callback function is the accumulated result, and is provided as an argument in the next call to the callback function.
+   * @param callbackfn A function that accepts up to four arguments. The reduce method calls the callbackfn function one time for each element in the array.
+   * @param initialValue If initialValue is specified, it is used as the initial value to start the accumulation. The first call to the callbackfn function provides this value as an argument instead of an array value.
+   */
+  reduce(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue: T = null): T {
+    if (initialValue === null) {
+      return this._values.reduce(callbackfn);
+    } else {
+      return this._values.reduce(callbackfn, initialValue);
+    }
+  }
+
+
+
 
 
 }
@@ -875,5 +901,9 @@ const objArr2 = new List([
   new Student(1, 'Test4', 26),
   new Student(4, 'Test5', 27)
 ]);
+
+objArr.values.reduce
+
+
 
 
