@@ -18,5 +18,11 @@
     ],
     "module": "es6",
     "baseUrl": "./"
-  }
+  },
+  "include": [
+    "*.ts"
+  ],
+  "files": [
+    "main.ts"
+  ]
 }

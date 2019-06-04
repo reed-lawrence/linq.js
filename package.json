@@ -4,12 +4,15 @@
   "description": "Extension library giving fluid and dynamic array operations",
   "main": "main.js",
   "dependencies": {
+    "lodash": "^4.17.11",
     "tslib": "^1.9.3"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/lodash": "^4.14.133"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "reset && tsc main.ts && node main.js"
+    "build": "reset && tsc --target es5 main.ts && node main.js"
   },
   "repository": {
     "type": "git",
