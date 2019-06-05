@@ -13,6 +13,15 @@ export class GroupedList<T, U>{
   }
 }
 
+export class zScoreListItem<T>{
+  zScore: number;
+  object: T;
+  constructor(zScore: number = null, object: T = null) {
+    this.object = object;
+    this.zScore = zScore;
+  }
+}
+
 export class List<T> {
   private _values: T[];
   private static _classTypes: 'string' | 'number' | 'undefined' | 'boolean' | 'bigint' | 'symbol' | 'object' | 'function';
@@ -36,6 +45,15 @@ export class List<T> {
   set(index: number, obj: T): List<T> {
     this._values[index] = obj;
     return this;
+  }
+
+  /// STATIC METHODS
+  static repeat<T>(obj: T, count: number): List<T> {
+    const output: T[] = [];
+    for (let i = 0; i < count; i++) {
+      output.push(obj);
+    }
+    return new List(output);
   }
 
   getRange(start?: number, end?: number): List<T> {
@@ -148,8 +166,33 @@ export class List<T> {
   }
 
   /**
+   * Appends a value to the end of the List<T>.
+   * @param obj The object<T> to append to the List<T>
+   * @returns Returns the modified List<T>
+   */
+  append(obj: T): List<T> {
+    this.add(obj);
+    return this;
+  }
+
+  /**
+   * Adds a value to the beginning of the List<T>.
+   * @param obj The value to prepend to source.
+   * @returns Returns the modified List<T>
+   */
+  prepend(obj: T): List<T> {
+    const arr: T[] = [obj];
+    for (let i = 0; i < this._values.length; i++) {
+      arr.push(this._values[i]);
+    }
+    this._values = arr;
+    return this;
+  }
+
+  /**
    * Add a range of items from an array to the List.
    * @param items array of objects to be added
+   * @returns Returns the modified List<T>
    */
   addRange(items: T[]): List<T> {
     if (items !== null) {
@@ -162,7 +205,9 @@ export class List<T> {
   }
 
   /**
+   * Add a range of items from a List<T>
    * @param list List object to be added
+   * @returns Returns the modified List<T>
    */
   addRangeFromList(...lists: List<T>[]): List<T> {
     for (let i = 0; i < lists.length; i++) {
@@ -170,6 +215,17 @@ export class List<T> {
     }
     return this;
   }
+
+  /**
+   * Concatenate a second List<T> to an existing List<T>. Elements will be added in order to the end of the existing List<T>.
+   * @param list List<T> to concatenate
+   * @returns Returns the modified List<T>
+   */
+  concat(list: List<T>): List<T> {
+    return this.addRangeFromList(_.cloneDeep(list));
+  }
+
+
 
   /**
    * Creates a List of unique values, in order, from all of the provided arrays using SameValueZero for equality comparisons.
@@ -229,7 +285,11 @@ export class List<T> {
     return this.unionWith(list.toArray(), comparator);
   }
 
-
+  /**
+   * Filters a sequence of values based on a predicate.
+   * @param predicate Callback function of the conditions to check against the elements
+   * @returns A List<T> that contains elements from the input sequence that satisfy the condition.
+   */
   where(predicate: (o: T) => boolean): List<T> {
     const tempArr = new List<T>();
     for (let i = 0; i < this._values.length; i++) {
@@ -237,11 +297,40 @@ export class List<T> {
         tempArr.add(this._values[i]);
       }
     }
-    return tempArr;
+    return _.cloneDeep(tempArr);
   }
 
-  contains<U>(predicate: (o: T) => boolean): boolean {
-    return this.where(predicate).length > 0;
+  /**
+   * Return true or false if specified object exists in the List<T>
+   * @param predicate Callback function to evaluate each iteration of the List<T>
+   * @returns Returns boolean of expression
+   */
+  contains<U>(obj: T): boolean {
+    return this.indexOf(obj) !== -1;
+  }
+
+  /**
+   * Return true or false if specified condition exists in one or more iterations of the List<T>
+   * @param predicate Callback function to evaluate each iteration of the List<T>
+   * @returns Returns boolean of expression
+   */
+  exists(predicate: (o: T) => boolean): boolean {
+    for (let i = 0; i < this._values.length; i++) {
+      if (predicate(this._values[i]) === true) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * (Alias of List<T>.exists())
+   * Return true or false if specified condition exists in one or more iterations of the List<T>
+   * @param predicate Callback function to evaluate each iteration of the List<T>
+   * @returns Returns boolean of expression
+   */
+  any(predicate: (o: T) => boolean): boolean {
+    return this.exists(predicate);
   }
 
   toArray(): T[] {
@@ -271,20 +360,6 @@ export class List<T> {
     return _.cloneDeep(output);
   }
 
-  spliceIfExists<U>(obj: T, key: (o: T) => U = null): List<T> {
-    if (typeof obj === 'object' && key === null) {
-      console.warn('Object defined in pushUnique is complex, but a key was not specified.');
-    } else if (typeof obj !== 'object' && key !== null) {
-      console.warn('Object is not complex, but a key was specified');
-    }
-
-    const index = key !== null ? this.findIndex(o => key(o) === key(obj)) : this._values.indexOf(obj);
-    if (index !== -1) {
-      this._values.splice(index);
-    }
-    return this;
-  }
-
   /**
    * Removes an object from the List by performing deep comparison
    * @param obj The object to remove
@@ -302,7 +377,12 @@ export class List<T> {
     return this;
   }
 
-  removeWhere(predicate: (o: T) => boolean): List<T> {
+  /**
+   * Remove all objects within the List<T> where the predicate expression evaluates to true.
+   * @param predicate Callback expression to evaluate over each iteration of the List<T>
+   * @returns Returns the modified List<T>
+   */
+  removeAll(predicate: (o: T) => boolean): List<T> {
     for (let i = 0; i < this.length; i++) {
       if (predicate(this._values[i]) === true) {
         this._values.splice(i, 1);
@@ -312,8 +392,73 @@ export class List<T> {
     return this;
   }
 
-  orderByDescending<U>(key: (o: T) => U): List<T> {
-    this._values.sort((a, b) => key(a) > key(b) ? -1 : key(a) < key(b) ? 1 : 0);
+  /**
+   * (Alias of Array.splice())
+   * Remove a single object from the List<T> at the specified index.
+   * @param index The zero-based index of the element to remove.
+   * @returns Returns the modified List<T>
+   */
+  removeAt(index: number): List<T> {
+    if (index < 0 || index > this._values.length - 1) {
+      throw new Error('Index out of range: List<T>.removeAt() index specified does not exist in List');
+    }
+
+    this._values.splice(index, 1);
+    return this;
+  }
+
+
+
+  /**
+   * (Alias of Array.splice())
+   * Remove a range of elements from List<T>
+   * @param start The zero-based starting index of the range of elements to remove.
+   * @param count The number of elements to remove.
+   * @returns Returns the modified List<T>
+   */
+  removeRange(start: number = 0, count: number = 1): List<T> {
+    if (start < 0 || start > this._values.length - 1 || start === null || start === undefined) {
+      throw new Error('Index out of range: List<T>.removeRange() start index specified does not exist in List');
+    } else if (count === null || count === undefined) {
+      throw new Error('Argument exception: List<T>.removeRange() count must not be null or undefined');
+    }
+    this._values.splice(start, count);
+    return this;
+  }
+
+
+
+  /**
+   * Sorts a List.
+   * @param compareFn The name of the function used to determine the order of the elements. If omitted, the elements are sorted in ascending, ASCII character order.
+   */
+  sort(compareFn?: (a: T, b: T) => number): List<T> {
+    this._values = this._values.sort(compareFn)
+    return this;
+  }
+
+  /**
+   * Orders a List<T>. Specify an optional key and Ascending or Descending order.
+   * @param key The callback to specify which parameter of <T> to order by
+   * @param order Specify 'asc' for Ascending, 'desc' for Descending. Ascending by default.
+   */
+  orderBy<U>(key: (o: T) => U = null, order: 'desc' | 'asc' = 'asc'): List<T> {
+    if (order !== 'asc' && order !== 'desc') {
+      throw new Error('Argument Exception: order must be asc or desc.');
+    }
+    if (key !== null) {
+      if (order === 'asc') {
+        this._values.sort((a, b) => key(a) > key(b) ? 1 : key(a) < key(b) ? -1 : 0);
+      } else if (order === 'desc') {
+        this._values.sort((a, b) => key(a) > key(b) ? -1 : key(a) < key(b) ? 1 : 0);
+      }
+    } else {
+      if (order === 'asc') {
+        this.values.sort((a, b) => a > b ? 1 : a < b ? -1 : 0);
+      } else if (order === 'desc') {
+        this.values.sort((a, b) => a > b ? -1 : a < b ? 1 : 0);
+      }
+    }
     return this;
   }
 
@@ -326,6 +471,11 @@ export class List<T> {
     return this;
   }
 
+  /**
+   * Get the count of elements in List<T> as defined by a predicate callback function.
+   * @param predicate Callback function of the conditions to check against the elements
+   * @returns Returns count
+   */
   count(predicate: (o: T) => boolean = null): number {
     if (predicate === null) {
       return this._values.length;
@@ -340,6 +490,13 @@ export class List<T> {
     }
   }
 
+  /// MATH FUNCTIONS
+
+  /**
+   * Calculate the sum of a List<T>. Optional numeric key callback.
+   * @param key Numeric key of values to calculate
+   * @returns Returns sum
+   */
   sum<U>(key: (o: T) => U = null): number {
     let total = 0;
     if (key !== null) {
@@ -348,19 +505,29 @@ export class List<T> {
         if (typeof num === 'number') {
           total += num;
         } else {
-          console.warn('Non parseable number detected');
+          console.warn('Argument Exception: List<T>.sum: Non number detected in List');
         }
       }
       return total;
     }
   }
 
-  average<U>(key: (o: T) => U): number {
+  /**
+   * Calculate the mean of a List<T>. Optional numeric key callback.
+   * @param key Numeric key of values to calculate
+   * @returns Returns mean
+   */
+  mean(key: (o: T) => number = null): number {
     const sum = this.sum(key);
     return sum / this._values.length;
   }
 
-  min<U>(key: (o: T) => U): number {
+  /**
+   * Get the minimum value of a List<T>. Optional numeric key callback.
+   * @param key Numeric key of values to calculate
+   * @returns Returns minimum
+   */
+  min(key: (o: T) => number = null): number {
     let min = null;
     for (let i = 0; i < this._values.length; i++) {
       const val = parseInt(key(this._values[i]).toString(), 10);
@@ -373,13 +540,18 @@ export class List<T> {
           }
         }
       } else {
-        console.warn('Non parseable number detected');
+        console.warn('Argument Exception: List<T>.min: Non number detected in List');
       }
     }
     return min;
   }
 
-  max<U>(key: (o: T) => U): number {
+  /**
+   * Get the maximum value of a List<T>. Optional numeric key callback.
+   * @param key Numeric key of values to calculate
+   * @returns Returns maximum
+   */
+  max(key: (o: T) => number = null): number {
     let max = null;
     for (let i = 0; i < this._values.length; i++) {
       const val = parseInt(key(this._values[i]).toString(), 10);
@@ -392,12 +564,170 @@ export class List<T> {
           }
         }
       } else {
-        console.warn('Non number detected');
+        console.warn('Argument Exception: List<T>.max: Non number detected in List');
       }
     }
     return max;
   }
 
+  /**
+   * Calculate median of a List<T>. Optional numeric key callback.
+   * @param key Numeric key of values to calculate
+   * @returns Returns median
+   */
+  median(key: (o: T) => number = null): number {
+    const nums: number[] = this._values.map(o => key(o)).sort((a, b) => a - b);
+    const midpoint = nums.length / 2;
+    if (nums.length % 2 === 0) {
+      return nums[midpoint];
+    } else {
+      return (nums[midpoint - 1] + nums[midpoint]) / 2;
+    }
+  }
+
+  /**
+   * Calculate modes of a List<T>.nOptional numeric key callback.
+   * @param key Numeric key of values to calculate
+   * @returns Returns array of modes
+   */
+  modes(key: (o: T) => number = null): number[] {
+    const list = new List<{ num: number; count: number }>();
+    for (let i = 0; i < this._values.length; i++) {
+      const index = list.findIndex(o => o.num === key(this._values[i]));
+      if (index !== -1) {
+        list.values[index].count++;
+      } else {
+        list.add({ count: 1, num: key(this._values[i]) });
+      }
+    }
+
+    const max = list.max(o => o.count);
+    return list.where(o => o.count === max).map(o => o.num).toArray();
+  }
+
+  /**
+   * Caluclate range of a List<T>. Optional numeric key callback.
+   * @param key Numeric key of values to calculate
+   * @returns Returns range
+   */
+  range(key: (o: T) => number = null): number {
+    const list = new List(this._values.map(key));
+    return this.max(key) - this.min(key);
+  }
+
+  /**
+   * Calculate midrange of List. Optional numeric key callback.
+   * @param key Numeric key of values to calculate
+   * @returns Returns midrange
+   */
+  midrange(key: (o: T) => number = null): number {
+    const list = new List(this._values.map(key));
+    return this.range(key) / 2;
+  }
+
+  /**
+   * Calculate Variance of List. Optional numeric key callback.
+   * @param key Numeric key of values to calculate
+   * @returns Returns variance
+   */
+  variance(key: (o: T) => number = null): number {
+    const mean = this.mean(key);
+    const nums: number[] = this._values.map(key);
+    return new List(nums.map(num => Math.pow(num - mean, 2))).mean();
+  }
+
+  /**
+   * Calculate Standard Deviation. Optional numeric key callback.
+   * @param key Numeric key of values to calculate
+   * @returns Returns standard deviation
+   */
+  stdDev(key: (o: T) => number = null): number {
+    return Math.sqrt(this.variance(key));
+  }
+
+  /**
+   * Calculate Mean Absolute Deviation. Optional numeric key callback.
+   * @param key Numeric key of values to calculate
+   * @returns Returns mean absolute deviation
+   */
+  meanAbsDev(key: (o: T) => number = null): number {
+    const mean = this.mean(key);
+    const nums: number[] = this._values.map(key);
+    return new List(nums.map(num => Math.abs(num - mean))).mean();
+  }
+
+  /**
+   * Calculate Z-Score from a given list. Returns object of zScoreListItems that contains the oringial object and it's respective zScore. Optional numeric key callback.
+   * @param key Numeric key of values to calculate Z-Score
+   * @returns Returns List of zScoreListItems
+   */
+  zScores(key: (o: T) => number = null): List<zScoreListItem<T>> {
+    const mean = this.mean(key);
+    const stdDev = this.stdDev(key);
+    const output = new List<zScoreListItem<T>>();
+    for (let i = 0; i < this._values.length; i++) {
+      output.add(new zScoreListItem(
+        (key(this._values[i]) - mean) / stdDev, this._values[i]
+      ));
+    }
+    return output;
+  }
+
+  /**
+   * Determines whether every element in the List<T> matches the conditions defined by the specified predicate.
+   * @param predicate Callback function of the conditions to check against the elements.
+   * @returns Returns true or false
+   */
+  trueForAll(predicate: (o: T) => boolean): boolean {
+    let output = true;
+    for (let i = 0; i < this._values.length; i++) {
+      if (predicate(this._values[i]) === false) {
+        output = false;
+      }
+    }
+    return output;
+  }
+
+  /**
+   * Copies a range of elements from the List<T> to a compatible one-dimensional array, starting at the specified index of the target array.
+   * @param array The one-dimensional Array that is the destination of the elements copied from List<T>. The Array must have zero-based indexing.
+   * @param fromIndex The zero-based index in the source List<T> at which copying begins.
+   * @param atIndex The zero-based index in array at which copying begins.
+   * @param count The number of elements to copy.
+   */
+  copyTo(array: T[], fromIndex = 0, atIndex = 0, count = this._values.length): void {
+    if (fromIndex < 0 || fromIndex > this._values.length) {
+      throw new Error('Index out of range: fromIndex (' + fromIndex + ') does not exist in specified array.');
+    } else if (atIndex < 0 || atIndex > array.length) {
+      throw new Error('Index out of range: atIndex (' + atIndex + ') does not exist in target array.');
+    } else if (count < 1 || count > this._values.length) {
+      throw new Error('Argument Exception: count (' + count + ') is less than 1 or greater than the length of the specified array');
+    }
+
+    const output: T[] = array.slice(0, atIndex);
+    _.cloneDeep(this._values.slice(fromIndex, count)).forEach(v => { output.push(v) });
+    array.slice(atIndex, array.length).forEach(v => output.push(v));
+    array = output;
+  }
+
+  /**
+   * Copies a range of elements from the List<T> to a compatible List<T>, starting at the specified index of the target List.
+   * @param list The List<T> that is the destination of the elements copied from List<T>.
+   * @param fromIndex The zero-based index in the source List<T> at which copying begins.
+   * @param atIndex The zero-based index in List at which copying begins.
+   * @param count The number of elements to copy.
+   */
+  copyToList(list: List<T>, fromIndex = 0, atIndex = 0, count = this._values.length): void {
+    const arr: T[] = _.cloneDeep(list.values);
+    this.copyTo(arr, fromIndex, atIndex, count);
+    list._values = arr;
+  }
+
+  /**
+   * Group the List<T> by a specified Key
+   * @param key 
+   * @returns Returns new List of GroupList<T> on Key of U
+   */
   groupBy<U>(key: (o: T) => U): List<GroupedList<T, U>> {
     const groups: U[] = this.distinct(key).toArray().map(key);
     const output = new List<GroupedList<T, U>>();
@@ -408,6 +738,10 @@ export class List<T> {
     return output;
   }
 
+  /**
+   * Ungroup a grouped List<T>. TypeScript Note: Specify type upon function call for best results.
+   * @returns Returns a new decoupled ungrouped List<U>.
+   */
   unGroup<U>(): List<U> {
     const output = new List<U>();
     let temp: List<GroupedList<U, any>> = new List(<any>this._values);
@@ -419,6 +753,34 @@ export class List<T> {
     return _.cloneDeep(output);
   }
 
+  /**
+   * Correlates the elements of two sequences based on matching keys. The default equality comparer is used to compare keys.
+   * @param inner The sequence to join to the first sequence.
+   * @param outerKeySelector A function to extract the join key from each element of the first sequence.
+   * @param innerKeySelector A function to extract the join key from each element of the second sequence.
+   * @param resultSelector A function to create a result element from two matching elements.
+   * @returns Returns decoupled List<TResult> with elements that are obtained by performing an inner join on two sequences.
+   * @typedef TInner The type of the elements of the second sequence.
+   * @typedef TKey The type of the keys returned by the key selector functions.
+   * @typedef TResult The type of the result elements.
+   */
+  join<TInner, TKey, TResult>(inner: List<TInner>, outerKeySelector: (o: T) => TKey, innerKeySelector: (o: TInner) => TKey, resultSelector: (outer: T, inner: TInner) => TResult): List<TResult> {
+    const output = new List<TResult>();
+    for (const _inner of inner._values) {
+      for (const _outer of this._values) {
+        if (_.isEqual(innerKeySelector(_inner), outerKeySelector(_outer)) === true) {
+          output.add(resultSelector(_outer, _inner));
+        }
+      }
+    }
+    return _.cloneDeep(output);
+  }
+
+  /**
+   * Filter and return a new decoupled List<U> containing only elements of a specified type.
+   * @param type Pick from predefined types, or pass a Class reference to filter by
+   * @returns Returns List<U> 
+   */
   ofType<U>(type: typeof List._classTypes | U): List<U> {
     const output = new List<U>();
     const objectKeys = Object.keys(type);
@@ -442,7 +804,7 @@ export class List<T> {
         }
       }
     }
-    return output;
+    return _.cloneDeep(output);
   }
 
   /**
@@ -463,33 +825,42 @@ export class List<T> {
   /**
    * Select a list of columns, this method will flatten any class methods;
    */
-  select<U>(...keys: (keyof T)[]): List<U> {
-    let output = new List<U>();
-
-    const _values = this._values.map(i => i);
-    for (let i = 0; i < _values.length; i++) {
-      let temp: any = {};
-      for (let key of keys) {
-        const keyType = typeof _values[i][<any>key]
-        if (keyType === 'function') {
-          console.warn('Function ' + key + ' used as key, will flatten and may perform unexpectedly.');
-        } else if (keyType === 'object') {
-          // console.warn('Object ${key} used as key, will flatten and may perform unexpectedly.');
-          temp[key] = _values[i][<any>key];
-        } else {
-          temp[key] = _values[i][<any>key];
-        }
-
-      }
-      output.add(<any>temp);
+  select<TResult>(selector: (o: T, index: number) => TResult): List<TResult> {
+    let output = new List<TResult>();
+    for (let i = 0; i < this._values.length; i++) {
+      output.add(selector(this._values[i], i));
     }
-    return output;
+    return _.cloneDeep(output);
   }
 
-  map<U>(callbackfn: (o: T, index: number, array: T[]) => U): List<U> {
-    const mappedVals = _.cloneDeep(this._values.map(callbackfn));
-    const output = new List<U>(mappedVals);
-    return output;
+  /**
+   * (Alias of Array.prototype.map)
+   * Calls a defined callback function on each element of a List<T>, and returns a decoupled List<U> that contains the results.
+   * @param callbackfn A function that accepts up to three arguments. The map method calls the callbackfn function one time for each element in the array.
+   * @param thisArg An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+   * @returns Returns a decoupled List<U> mapped to the desired type.
+   */
+  map<U>(callbackfn: (o: T, index: number, array: T[]) => U, thisArg?: any): List<U> {
+    const mappedVals = _.cloneDeep(this._values.map(callbackfn, thisArg));
+    return new List<U>(mappedVals);
+  }
+
+  /**
+   * (Alias of List<T>.map)
+   * Calls a defined callback function on each element of a List<T>, and returns a decoupled List<U> that contains the results.
+   * @param converter Callback function to map type T into type U
+   * @returns Returns a decoupled List<U> converted to the desired type.
+   */
+  convert<U>(converter: (o: T) => U): List<U> {
+    return this.map(converter);
+  }
+
+  /**
+   * Override method to force TypeScript compiler to treat values as specified by the type declaration. 
+   * **For type conversions use List<T>.convert() or List<T>.map()** 
+   */
+  cast<CastTo>(): List<CastTo> {
+    return new List<CastTo>(this._values.map(i => <any>i));
   }
 
   /// LODASH REPRO METHODS
@@ -515,17 +886,6 @@ export class List<T> {
   compact(): List<T> {
     const decoupledArr = _.cloneDeep(this._values);
     this._values = _.compact(decoupledArr);
-    return this;
-  }
-
-  /**
-   * Creates a new array decoupling and concatenating array with any additional arrays and/or values
-   * @param values the values to concatenate
-   * @returns Returns the modified List<T> object
-   */
-  concat(values: T[]): List<T> {
-    const decoupledValues = _.cloneDeep(values);
-    _.concat(this._values, decoupledValues)
     return this;
   }
 
@@ -652,7 +1012,7 @@ export class List<T> {
    * Adds all the elements of an array separated by the specified separator string.
    * @param separator A string used to separate one element of an array from the next in the resulting String. If omitted, the array elements are separated with a comma.
    */
-  join(separator = ','): string {
+  split(separator = ','): string {
     return this._values.join(separator);
   }
 
@@ -760,6 +1120,33 @@ export class List<T> {
     return new List(_.cloneDeep(_.tail(this._values)));
   }
 
+  /**
+   * Gets a random element from the List.
+   * @returns Returns the random element.
+   */
+  sample(): T {
+    return _.sample(this._values);
+  }
+
+  /**
+   * Gets n random elements at unique keys from the List up to the size of collection. Note: Sample is not decoupled.
+   * @param n The number of elements to sample.
+   * @returns Returns List<T> of the random elements.
+   */
+  sampleSize(n: number = 1): List<T> {
+    return new List(_.sampleSize(this._values, n));
+  }
+
+
+  /**
+   * Creates a List<T> of shuffled values, using a version of the Fisher-Yates shuffle.
+   * @returns Returns the new shuffled List<T>.
+   */
+  shuffle(): List<T> {
+    _.shuffle(this._values);
+    return this;
+  }
+
 
   /// NATIVE REPRO
 
@@ -799,111 +1186,60 @@ export class List<T> {
 }
 
 
-
-export class TestClass {
-  constructor(key: number = null, value: string = null) {
-    this.key = key;
-    this.value = value;
-  }
-  key: number;
-  value: string;
-}
-
-export class StudentClass {
-  constructor(name?: string, id?: string, credits?: number) {
-    this.name = name;
-    this.id = id;
-    this.credits = credits;
-  }
-
-  name: string;
-  id: string;
-  credits: number;
-}
-
 export class Person {
-  constructor(name?: string, age?: number) {
+  name: string;
+  constructor(name: string = null) {
     this.name = name;
-    this.age = age;
   }
+}
 
+export class Pet {
   name: string;
   age: number;
-
-  print = (): string => {
-    return 'Name: ' + this.name + ' | Age: ' + this.age;
-  }
-}
-
-export class Student extends Person {
-  constructor(id?: number, name?: string, age?: number, classes: List<StudentClass> = null) {
-    super(name, age);
-    this.id = id;
-    if (classes === null) {
-      this.classes = new List();
+  owner: Person;
+  constructor(name: string = null, age: number = null, owner: Person = null) {
+    this.name = name;
+    this.age = age;
+    if (this.owner === null) {
+      this.owner = new Person();
     } else {
-      this.classes = new List(classes.toArray());
+      this.owner = owner
     }
-
   }
-  id: number;
-  classes: List<StudentClass>;
 }
 
-const objArr = new List<{ name: string, age: number, id: number }>([{
-  name: 'John',
-  age: 18,
-  id: 1
-}, {
-  name: 'Steve',
-  age: 17,
-  id: 2
-}, {
-  name: 'Bill',
-  age: 20,
-  id: 3
-}, {
-  name: 'Clark',
-  age: 18,
-  id: 4
-}, {
-  name: 'Ron',
-  age: 19,
-  id: 5
-}, {
-  name: 'Mary',
-  age: 17,
-  id: 6
-}, {
-  name: 'Sue',
-  age: 21,
-  id: 7
-}]);
 
-
-
-const complexObjArray = new List([
-  new Student(1, 'Test1', 25, new List<StudentClass>([
-    new StudentClass('Intro to Economics', 'ECON 101', 3),
-    new StudentClass('Intro to Finance', 'FIN 101', 3)
-  ])),
-  new Student(2, 'Test2', 22, new List<StudentClass>([
-    new StudentClass('Intro to Economics', 'ECON 101', 3),
-    new StudentClass('Calculus II', 'MATH 165', 4)
-  ])),
-  new Student(3, 'Test3', 30, new List<StudentClass>([
-    new StudentClass('Calculus II', 'MATH 165', 4),
-    new StudentClass('Intro to Java', 'CSCI 121', 3)
-  ]))
+const people = new List([
+  new Person('Terry'),
+  new Person('Magnus'),
+  new Person('Charlotte')
 ]);
 
-const objArr2 = new List([
-  new Student(1, 'Test4', 26),
-  new Student(4, 'Test5', 27)
+const pets = new List([
+  new Pet('Whiskers', 3, people.values[0]),
+  new Pet('Boots', 4, people.values[0]),
+  new Pet('Barley', 2, people.values[1]),
+  new Pet('Daisy', 5, people.values[2])
 ]);
 
-objArr.values.reduce
 
+// const query = people.join(pets,
+//   person => person,
+//   pet => pet.owner,
+//   (person, pet) => {
+//     return { ownerName: person.name, petName: pet.name };
+//   });
 
+// for (let obj of query.values) {
+//   console.log(obj.ownerName + ' | ' + obj.petName);
+// }
+
+const query = pets.select((pet, index) => {
+  return { index: index, str: pet.name };
+});
+
+for(const obj of query.values){
+  console.log('index ' + obj.index + ' str: ' + obj.str);
+}
 
 
