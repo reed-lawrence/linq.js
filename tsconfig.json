@@ -13,16 +13,17 @@
       "node_modules/@types"
     ],
     "lib": [
-      "es2017",
       "dom",
+      "es2015"
     ],
-    "module": "es6",
-    "baseUrl": "./"
+    "module": "commonjs",
+    "baseUrl": "./",
+    "downlevelIteration": true
   },
-  "include": [
-    "*.ts"
-  ],
   "files": [
     "main.ts"
+  ],
+  "include": [
+    "*.test.ts"
   ]
 }

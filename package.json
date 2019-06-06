@@ -8,11 +8,15 @@
     "tslib": "^1.9.3"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.133"
+    "@types/lodash": "^4.14.133",
+    "@types/node": "^12.0.5",
+    "babel": "^6.23.0",
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "reset && tsc --target es5 main.ts && node main.js"
+    "test": "node ./dist/out-tsc/list.test.js",
+    "build": "reset && tsc && node ./dist/out-tsc/main.js"
   },
   "repository": {
     "type": "git",
