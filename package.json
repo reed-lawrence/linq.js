@@ -15,7 +15,7 @@
     "babel-preset-env": "^1.7.0"
   },
   "scripts": {
-    "test": "node ./dist/out-tsc/list.test.js",
+    "test": "tsc && node ./dist/out-tsc/list.test.js",
     "build": "reset && tsc && node ./dist/out-tsc/main.js"
   },
   "repository": {
