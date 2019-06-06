@@ -31,15 +31,19 @@ export class TestController {
     this.tests.push(new ITest(testName, test));
   }
 
-  public run() {
-    const testPromises: Promise<any>[] = [];
-    const timer = new Timer();
-    for (let test of this.tests) {
-      testPromises.push(this.runTest(test, this.results));
-    }
-    Promise.all(testPromises).then(done => {
-      this.printResults(timer.elapsed);
-    })
+  public run(): Promise<RunResult> {
+    return new Promise<RunResult>(resolve => {
+      const testPromises: Promise<any>[] = [];
+      const timer = new Timer();
+      for (let test of this.tests) {
+        testPromises.push(this.runTest(test, this.results));
+      }
+      Promise.all(testPromises).then(done => {
+        const totalTime = timer.elapsed;
+        this.printResults(totalTime);
+        resolve(new RunResult(this.results, totalTime));
+      })
+    });
   }
 
   private runTest(test: ITest, results: TestResult[]): Promise<any> {
@@ -81,6 +85,15 @@ class Timer {
   public get elapsed(): number {
     const end = process.hrtime(this.start);
     return Math.round((end[0] * 1000) + (end[1] / 1000000));
+  }
+}
+
+export class RunResult {
+  results: TestResult[];
+  timeElapsed: number;
+  constructor(results: TestResult[], timeElapsed: number) {
+    this.results = results;
+    this.timeElapsed = timeElapsed;
   }
 }
 
