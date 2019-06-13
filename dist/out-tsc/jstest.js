@@ -21,24 +21,28 @@ var TestController = /** @class */ (function () {
     };
     TestController.prototype.run = function () {
         var _this = this;
-        var e_1, _a;
-        var testPromises = [];
-        var timer = new Timer();
-        try {
-            for (var _b = tslib_1.__values(this.tests), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var test = _c.value;
-                testPromises.push(this.runTest(test, this.results));
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
+        return new Promise(function (resolve) {
+            var e_1, _a;
+            var testPromises = [];
+            var timer = new Timer();
             try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                for (var _b = tslib_1.__values(_this.tests), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var test = _c.value;
+                    testPromises.push(_this.runTest(test, _this.results));
+                }
             }
-            finally { if (e_1) throw e_1.error; }
-        }
-        Promise.all(testPromises).then(function (done) {
-            _this.printResults(timer.elapsed);
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
+            Promise.all(testPromises).then(function (done) {
+                var totalTime = timer.elapsed;
+                _this.printResults(totalTime);
+                resolve(new RunResult(_this.results, totalTime));
+            });
         });
     };
     TestController.prototype.runTest = function (test, results) {
@@ -63,6 +67,7 @@ var TestController = /** @class */ (function () {
     };
     TestController.prototype.printResults = function (timeElapsed) {
         var e_2, _a, e_3, _b;
+        console.clear();
         console.log('\x1b[33m Tests complete! \x1b[0m');
         console.log('Total runtime: ' + timeElapsed + 'ms');
         console.log('\nPassed Tests: ');
@@ -111,6 +116,14 @@ var Timer = /** @class */ (function () {
     });
     return Timer;
 }());
+var RunResult = /** @class */ (function () {
+    function RunResult(results, timeElapsed) {
+        this.results = results;
+        this.timeElapsed = timeElapsed;
+    }
+    return RunResult;
+}());
+exports.RunResult = RunResult;
 var AssertResult = /** @class */ (function () {
     function AssertResult(result, message) {
         if (message === void 0) { message = null; }

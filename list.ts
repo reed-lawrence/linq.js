@@ -77,7 +77,7 @@ export class List<T> extends Enumerable<T>{
    * @returns Returns a decoupled List<U> converted to the desired type.
    */
   convertAll<U>(converter: (o: T) => U): List<U> {
-    return this.map(converter).toList();
+    return this.map(converter, null, true).toList();
   }
 
   /**
@@ -98,8 +98,16 @@ export class List<T> extends Enumerable<T>{
 
     const output: T[] = array.slice(0, atIndex);
     _.cloneDeep(this._values.slice(fromIndex, count)).forEach(v => { output.push(v) });
+    // console.log(output);
     array.slice(atIndex, array.length).forEach(v => output.push(v));
-    array = output;
+
+    for (let i = 0; i < array.length; i++) {
+      array.pop();
+    }
+
+    for (let i = 0; i < output.length; i++) {
+      array.push(output[i]);
+    }
   }
 
   /**
@@ -945,9 +953,8 @@ export class List<T> extends Enumerable<T>{
    * @returns Returns the modified List<T>
    */
   concat(collection: List<T> | T[]): List<T> {
-    const decoupled = _.cloneDeep(collection);
-    for (let i = 0; i < decoupled.length; i++) {
-      this.append(decoupled[i]);
+    for (let i = 0; i < collection.length; i++) {
+      this.append(collection[i]);
     }
     return this;
   }
@@ -1172,18 +1179,17 @@ export class List<T> extends Enumerable<T>{
   //   return this._values.v
   // }
 
-  /*************************************************************************************************** */
-
+  /*****************************************************************************************************/
   /** LODASH REPRO */
+  /*****************************************************************************************************/
+
   /**
    * Decouples and returns an array with all false-y values removed.
    * @returns Returns the modified List<T> object
    */
   compact(): List<T> {
     const decoupledArr = _.cloneDeep(this.toArray());
-    this._values = _.compact(decoupledArr);
-    this.reIndexKeys();
-    return this;
+    return new List(_.compact(decoupledArr));
   }
 
   /**

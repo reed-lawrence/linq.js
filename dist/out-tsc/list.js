@@ -76,7 +76,7 @@ var List = /** @class */ (function (_super) {
      * @returns Returns a decoupled List<U> converted to the desired type.
      */
     List.prototype.convertAll = function (converter) {
-        return this.map(converter).toList();
+        return this.map(converter, null, true).toList();
     };
     /**
      * Copies a range of elements from the List<T> to a compatible one-dimensional array, starting at the specified index of the target array.
@@ -100,8 +100,14 @@ var List = /** @class */ (function (_super) {
         }
         var output = array.slice(0, atIndex);
         _.cloneDeep(this._values.slice(fromIndex, count)).forEach(function (v) { output.push(v); });
+        // console.log(output);
         array.slice(atIndex, array.length).forEach(function (v) { return output.push(v); });
-        array = output;
+        for (var i = 0; i < array.length; i++) {
+            array.pop();
+        }
+        for (var i = 0; i < output.length; i++) {
+            array.push(output[i]);
+        }
     };
     /**
      * (Alias of List.Any())
@@ -946,9 +952,8 @@ var List = /** @class */ (function (_super) {
      * @returns Returns the modified List<T>
      */
     List.prototype.concat = function (collection) {
-        var decoupled = _.cloneDeep(collection);
-        for (var i = 0; i < decoupled.length; i++) {
-            this.append(decoupled[i]);
+        for (var i = 0; i < collection.length; i++) {
+            this.append(collection[i]);
         }
         return this;
     };
@@ -1164,17 +1169,16 @@ var List = /** @class */ (function (_super) {
     // values(){
     //   return this._values.v
     // }
-    /*************************************************************************************************** */
+    /*****************************************************************************************************/
     /** LODASH REPRO */
+    /*****************************************************************************************************/
     /**
      * Decouples and returns an array with all false-y values removed.
      * @returns Returns the modified List<T> object
      */
     List.prototype.compact = function () {
         var decoupledArr = _.cloneDeep(this.toArray());
-        this._values = _.compact(decoupledArr);
-        this.reIndexKeys();
-        return this;
+        return new List(_.compact(decoupledArr));
     };
     /**
      * Creates an array of elements split into groups the length of size. If collection can’t be split evenly, the final chunk will be the remaining elements.
