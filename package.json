@@ -4,7 +4,7 @@
   "description": "Extension library giving fluid and dynamic array operations",
   "main": "main.js",
   "dependencies": {
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.13",
     "tslib": "^1.9.3"
   },
   "devDependencies": {
